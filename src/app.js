@@ -6,7 +6,15 @@ function loadDevices() {
     const devices = JSON.parse(data);
     return devices;
 }
+
+function loadConnections() {
+    const data = fs.readFileSync("data/connections.json", "utf8");
+    const connections = JSON.parse(data);
+    return connections;
+}
+
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout }); 
+
 function showMenu() { 
     console.log("\n================================="); 
     console.log(" Secure Network Topology Tool"); 
@@ -14,12 +22,14 @@ function showMenu() {
     console.log("1. About");
     console.log("2. List Devices");
     console.log("3. Add Device");
-    console.log("4. Exit");
+    console.log("4. Add Connection");
+    console.log("5. Exit");
   rl.question("Enter your choice: ", function(choice) { 
     // Pass the user input into the dedicated function from the diagram
     processChoice(choice); 
   }); 
 } 
+
 function isValidIP(ip) {
     const parts = ip.split(".");
     if (parts.length !== 4) {
@@ -34,12 +44,25 @@ function isValidIP(ip) {
     });
     return valid;
 }
+
 function isValidName(name) {
     return name.trim() !== "";
 }
+
 function isValidType(type) {
     return type.trim() !== "";
 }
+
+function findDeviceByName(name) {
+    const devices = loadDevices();
+    for (const device of devices) {
+        if (device.name === name) {
+            return device;
+        }
+    }
+    return null;
+}
+
 function processChoice(choice) {
   if (choice === "1") {
     console.log("Secure Network Topology Tool v1.0");
@@ -100,6 +123,52 @@ function processChoice(choice) {
         });
     });
   } else if (choice === "4") {
+    rl.question("Enter source device: ", function(source) {
+        rl.question("Enter destination device: ", function(destination) {
+            const sourceDevice = findDeviceByName(source);
+            const destinationDevice = findDeviceByName(destination);
+
+            if (!sourceDevice || !destinationDevice) {
+                console.log("Error: Source or destination device does not exist.");
+                showMenu();
+                return;
+            }
+
+            if (source === destination) {
+                console.log("Error: Cannot connect a device to itself.");
+                showMenu();
+                return;
+            }
+
+            const connections = loadConnections();
+
+            let duplicateConnection = false;
+            connections.forEach(function(existingConnection) {
+                if (existingConnection.source === source && existingConnection.destination === destination) {
+                    duplicateConnection = true;
+                }
+            });
+
+            if (duplicateConnection) {
+                console.log("Warning: This connection already exists.");
+                showMenu();
+                return;
+            }
+
+            const connection = {
+                source: source,
+                destination: destination
+            };
+
+            connections.push(connection);
+            const jsonData = JSON.stringify(connections, null, 2);
+            fs.writeFileSync("data/connections.json", jsonData);
+
+            console.log(connection);
+            showMenu();
+        });
+    });
+  } else if (choice === "5") {
     console.log("Exiting...");
     rl.close();
   } else {
@@ -107,5 +176,6 @@ function processChoice(choice) {
     showMenu();
   }
 }
+
 // Start the menu when the app is run
 showMenu();
