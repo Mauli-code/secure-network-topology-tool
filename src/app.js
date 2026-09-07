@@ -4,13 +4,9 @@ const fs = require("fs");
 function loadDevices() {
     const data = fs.readFileSync("data/devices.json", "utf8");
     const devices = JSON.parse(data);
-
     return devices;
 }
-
-const fs = require("fs");
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout }); 
-
 function showMenu() { 
     console.log("\n================================="); 
     console.log(" Secure Network Topology Tool"); 
@@ -24,7 +20,6 @@ function showMenu() {
     processChoice(choice); 
   }); 
 } 
-
 function isValidIP(ip) {
     const parts = ip.split(".");
     if (parts.length !== 4) {
@@ -39,15 +34,18 @@ function isValidIP(ip) {
     });
     return valid;
 }
-
+function isValidName(name) {
+    return name.trim() !== "";
+}
+function isValidType(type) {
+    return type.trim() !== "";
+}
 function processChoice(choice) {
   if (choice === "1") {
     console.log("Secure Network Topology Tool v1.0");
     showMenu();
   } else if (choice === "2") {
-
     const devices = loadDevices();
-
     if (devices.length === 0) {
         console.log("No devices found.");
     } else {
@@ -55,24 +53,36 @@ function processChoice(choice) {
             console.log(device);
         });
     }
-
     showMenu();
   } else if (choice === "3") {
-
     const devices = loadDevices();
-
     rl.question("Enter device name: ", function(name) {
-
+        if (!isValidName(name)) {
+            console.log("Invalid device name.");
+            showMenu();
+            return;
+        }
         rl.question("Enter device type: ", function(type) {
-
-            rl.question("Enter IP address: ", function(ip) {
-                
+            if (!isValidType(type)) {
+                console.log("Invalid device type.");
+                showMenu();
+                return;
+            }
+            rl.question("Enter IP address: ", function(ip) {  
                 if (!isValidIP(ip)) {
                     console.log("Invalid IP address.");
                     showMenu();
                     return;
                 }
-
+                let duplicateFound = false;
+                devices.forEach(function(device) {
+                    if (device.ip === ip) {
+                        console.log("Security Warning: Duplicate IP address detected.");
+                        console.log(ip + " is already assigned to " + device.name + ".");
+                        console.log("Please review the network configuration.");
+                        duplicateFound = true;
+                    }
+                });
                 const id = devices.length + 1;
                 const device = {
                     id: id,
@@ -80,19 +90,14 @@ function processChoice(choice) {
                     type: type,
                     ip: ip
                 };
-
                 devices.push(device);
                 const jsonData = JSON.stringify(devices, null, 2);
                 fs.writeFileSync("data/devices.json", jsonData);
 
                 console.log(device);
-
                 showMenu();
-
             });
-
         });
-
     });
   } else if (choice === "4") {
     console.log("Exiting...");
@@ -102,6 +107,5 @@ function processChoice(choice) {
     showMenu();
   }
 }
-
 // Start the menu when the app is run
 showMenu();
