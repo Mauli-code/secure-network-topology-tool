@@ -1,4 +1,6 @@
 const readline = require("readline"); 
+const fs = require("fs");
+
 function loadDevices() {
     const data = fs.readFileSync("data/devices.json", "utf8");
     const devices = JSON.parse(data);
@@ -23,7 +25,21 @@ function showMenu() {
   }); 
 } 
 
-// Dedicated function handling the logic flows
+function isValidIP(ip) {
+    const parts = ip.split(".");
+    if (parts.length !== 4) {
+        return false;
+    }
+    let valid = true;
+    parts.forEach(function(part) {
+        const number = Number(part);
+        if (part === "" || Number.isNaN(number) || number < 0 || number > 255) {
+            valid = false;
+        }
+    });
+    return valid;
+}
+
 function processChoice(choice) {
   if (choice === "1") {
     console.log("Secure Network Topology Tool v1.0");
@@ -41,7 +57,7 @@ function processChoice(choice) {
     }
 
     showMenu();
-}  else if (choice === "3") {
+  } else if (choice === "3") {
 
     const devices = loadDevices();
 
@@ -51,6 +67,12 @@ function processChoice(choice) {
 
             rl.question("Enter IP address: ", function(ip) {
                 
+                if (!isValidIP(ip)) {
+                    console.log("Invalid IP address.");
+                    showMenu();
+                    return;
+                }
+
                 const id = devices.length + 1;
                 const device = {
                     id: id,
