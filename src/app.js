@@ -8,9 +8,12 @@ function loadDevices() {
 }
 
 function loadConnections() {
-    const data = fs.readFileSync("data/connections.json", "utf8");
-    const connections = JSON.parse(data);
-    return connections;
+    try {
+        const data = fs.readFileSync("data/connections.json", "utf8");
+        return JSON.parse(data);
+    } catch (error) {
+        return [];
+    }
 }
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout }); 
@@ -27,7 +30,6 @@ function showMenu() {
     console.log("6. Exit");
 
     rl.question("Enter your choice: ", function(choice) { 
-        // Pass the user input into the dedicated function from the diagram
         processChoice(choice); 
     }); 
 } 
@@ -65,7 +67,7 @@ function findDeviceByName(name) {
     return null;
 }
 
-/* Added: Generate Network Topology */
+/* Generate Network Topology */
 function generateTopology() {
     const devices = loadDevices();
     const connections = loadConnections();
@@ -78,6 +80,7 @@ function generateTopology() {
 
     connections.forEach(function(connection) {
         topology[connection.source].push(connection.destination);
+        topology[connection.destination].push(connection.source);
     });
 
     console.log("\n========== Network Topology ==========");
@@ -205,6 +208,7 @@ function processChoice(choice) {
                 showMenu();
             });
         });
+
     } else if (choice === "5") {
         generateTopology();
         showMenu();
@@ -212,6 +216,7 @@ function processChoice(choice) {
     } else if (choice === "6") {
         console.log("Exiting...");
         rl.close();
+
     } else {
         console.log("Invalid choice. Please try again.");
         showMenu();
