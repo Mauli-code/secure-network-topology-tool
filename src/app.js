@@ -54,7 +54,16 @@ function isValidName(name) {
 }
 
 function isValidType(type) {
-    return type.trim() !== "";
+    const allowedTypes = ["router", "switch", "pc"];
+    const enteredType = type.trim().toLowerCase();
+
+    for (const allowedType of allowedTypes) {
+        if (enteredType === allowedType) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function findDeviceByName(name) {
@@ -73,6 +82,8 @@ function generateTopology() {
     const connections = loadConnections();
 
     const topology = {};
+    let invalidConnections = 0;
+    let disconnectedDevices = 0;
 
     devices.forEach(function(device) {
         topology[device.name] = [];
@@ -83,24 +94,34 @@ function generateTopology() {
         const destinationDevice = findDeviceByName(connection.destination);
 
         if (sourceDevice === null || destinationDevice === null) {
+            invalidConnections++;
             console.log(
                 "Security Warning: Connection contains an unknown device."
             );
-            return; // skip this connection
+            return;
         }
 
         topology[connection.source].push(connection.destination);
         topology[connection.destination].push(connection.source);
     });
 
+    if (invalidConnections > 0) {
+        console.log("Security Warning: " + invalidConnections + " invalid connection(s) found.");
+    }
+
     console.log("\n========== Network Topology ==========");
 
     for (const deviceName in topology) {
         if (topology[deviceName].length === 0) {
             console.log(deviceName + " -> No outgoing connections");
+            disconnectedDevices++;
         } else {
             console.log(deviceName + " -> " + topology[deviceName].join(", "));
         }
+    }
+
+    if (disconnectedDevices > 0) {
+        console.log("Security Warning: " + disconnectedDevices + " device(s) have no connections.");
     }
 
     console.log("======================================");
@@ -132,11 +153,31 @@ function processChoice(choice) {
                 return;
             }
 
+            let duplicateName = false;
+            devices.forEach(function(device) {
+                if (device.name === name) {
+                    duplicateName = true;
+                }
+            });
+
+            if (duplicateName) {
+                console.log("Security Warning: Duplicate device name detected.");
+            }
+
             rl.question("Enter device type: ", function(type) {
                 if (!isValidType(type)) {
                     console.log("Invalid device type.");
+                    console.log("Allowed types: Router, Switch, PC");
                     showMenu();
                     return;
+                }
+
+                if (type.trim().toLowerCase() === "router") {
+                    type = "Router";
+                } else if (type.trim().toLowerCase() === "switch") {
+                    type = "Switch";
+                } else if (type.trim().toLowerCase() === "pc") {
+                    type = "PC";
                 }
 
                 rl.question("Enter IP address: ", function(ip) {
@@ -195,7 +236,10 @@ function processChoice(choice) {
 
                 let duplicateConnection = false;
                 connections.forEach(function(existingConnection) {
-                    if (existingConnection.source === source && existingConnection.destination === destination) {
+                    if (
+                        (existingConnection.source === source && existingConnection.destination === destination) ||
+                        (existingConnection.source === destination && existingConnection.destination === source)
+                    ) {
                         duplicateConnection = true;
                     }
                 });
