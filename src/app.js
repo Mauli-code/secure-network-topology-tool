@@ -69,7 +69,7 @@ function isValidType(type) {
 function findDeviceByName(name) {
     const devices = loadDevices();
     for (const device of devices) {
-        if (device.name === name) {
+        if (device.name.toLowerCase() === name.toLowerCase()) {
             return device;
         }
     }
@@ -80,6 +80,15 @@ function findDeviceByName(name) {
 function generateTopology() {
     const devices = loadDevices();
     const connections = loadConnections();
+
+    console.log("\nTopology Summary");
+    console.log("----------------");
+    console.log("Devices: " + devices.length);
+    console.log("Connections: " + connections.length);
+
+    if (connections.length === 0) {
+        console.log("Security Warning: No network connections found.");
+    }
 
     const topology = {};
     let invalidConnections = 0;
@@ -101,8 +110,8 @@ function generateTopology() {
             return;
         }
 
-        topology[connection.source].push(connection.destination);
-        topology[connection.destination].push(connection.source);
+        topology[sourceDevice.name].push(destinationDevice.name);
+        topology[destinationDevice.name].push(sourceDevice.name);
     });
 
     if (invalidConnections > 0) {
@@ -125,6 +134,7 @@ function generateTopology() {
     }
 
     console.log("======================================");
+    console.log("Topology generated successfully.");
 }
 
 function processChoice(choice) {
@@ -155,7 +165,7 @@ function processChoice(choice) {
 
             let duplicateName = false;
             devices.forEach(function(device) {
-                if (device.name === name) {
+                if (device.name.toLowerCase() === name.toLowerCase()) {
                     duplicateName = true;
                 }
             });
@@ -226,7 +236,7 @@ function processChoice(choice) {
                     return;
                 }
 
-                if (source === destination) {
+                if (sourceDevice.name.toLowerCase() === destinationDevice.name.toLowerCase()) {
                     console.log("Error: Cannot connect a device to itself.");
                     showMenu();
                     return;
@@ -236,9 +246,14 @@ function processChoice(choice) {
 
                 let duplicateConnection = false;
                 connections.forEach(function(existingConnection) {
+                    const existingSrc = existingConnection.source.toLowerCase();
+                    const existingDst = existingConnection.destination.toLowerCase();
+                    const currentSrc = sourceDevice.name.toLowerCase();
+                    const currentDst = destinationDevice.name.toLowerCase();
+
                     if (
-                        (existingConnection.source === source && existingConnection.destination === destination) ||
-                        (existingConnection.source === destination && existingConnection.destination === source)
+                        (existingSrc === currentSrc && existingDst === currentDst) ||
+                        (existingSrc === currentDst && existingDst === currentSrc)
                     ) {
                         duplicateConnection = true;
                     }
@@ -250,8 +265,8 @@ function processChoice(choice) {
                     return;
                 }
                 const connection = {
-                    source: source,
-                    destination: destination
+                    source: sourceDevice.name,
+                    destination: destinationDevice.name
                 };
                 connections.push(connection);
 
