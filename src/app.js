@@ -1,4 +1,4 @@
-const readline = require("readline"); 
+const readline = require("readline");
 const fs = require("fs");
 
 function loadDevices() {
@@ -16,12 +16,12 @@ function loadConnections() {
     }
 }
 
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout }); 
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-function showMenu() { 
-    console.log("================================="); 
-    console.log(" Secure Network Topology Tool"); 
-    console.log("================================="); 
+function showMenu() {
+    console.log("=================================");
+    console.log(" Secure Network Topology Tool");
+    console.log("=================================");
     console.log("1. About");
     console.log("2. List Devices");
     console.log("3. Add Device");
@@ -29,10 +29,10 @@ function showMenu() {
     console.log("5. Generate Topology");
     console.log("6. Exit");
 
-    rl.question("Enter your choice: ", function(choice) { 
-        processChoice(choice); 
-    }); 
-} 
+    rl.question("Enter your choice: ", function(choice) {
+        processChoice(choice);
+    });
+}
 
 function isValidIP(ip) {
     const parts = ip.split(".");
@@ -79,6 +79,16 @@ function generateTopology() {
     });
 
     connections.forEach(function(connection) {
+        const sourceDevice = findDeviceByName(connection.source);
+        const destinationDevice = findDeviceByName(connection.destination);
+
+        if (sourceDevice === null || destinationDevice === null) {
+            console.log(
+                "Security Warning: Connection contains an unknown device."
+            );
+            return; // skip this connection
+        }
+
         topology[connection.source].push(connection.destination);
         topology[connection.destination].push(connection.source);
     });
@@ -129,7 +139,7 @@ function processChoice(choice) {
                     return;
                 }
 
-                rl.question("Enter IP address: ", function(ip) {  
+                rl.question("Enter IP address: ", function(ip) {
                     if (!isValidIP(ip)) {
                         console.log("Invalid IP address.");
                         showMenu();
