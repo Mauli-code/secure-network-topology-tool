@@ -26,8 +26,9 @@ function showMenu() {
     console.log("2. List Devices");
     console.log("3. Add Device");
     console.log("4. Add Connection");
-    console.log("5. Generate Topology");
-    console.log("6. Exit");
+    console.log("5. List Connections");
+    console.log("6. Generate Topology");
+    console.log("7. Exit");
 
     rl.question("Enter your choice: ", function(choice) {
         processChoice(choice);
@@ -291,10 +292,23 @@ function processChoice(choice) {
         });
 
     } else if (choice === "5") {
-        generateTopology();
+        const connections = loadConnections();
+        if (connections.length === 0) {
+            console.log("No connections found.");
+        } else {
+            console.log("========== Network Connections ==========");
+            connections.forEach(function(connection) {
+                console.log(connection.source + " -> " + connection.destination);
+            });
+            console.log("=========================================");
+        }
         showMenu();
 
     } else if (choice === "6") {
+        generateTopology();
+        showMenu();
+
+    } else if (choice === "7") {
         console.log("Exiting...");
         rl.close();
 
