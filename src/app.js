@@ -81,6 +81,11 @@ function generateTopology() {
     const devices = loadDevices();
     const connections = loadConnections();
 
+    let report = "Network Topology Report\n";
+    report += "=======================\n\n";
+    report += "Devices: " + devices.length + "\n";
+    report += "Connections: " + connections.length + "\n\n";
+
     console.log("\nTopology Summary");
     console.log("----------------");
     console.log("Devices: " + devices.length);
@@ -116,6 +121,7 @@ function generateTopology() {
 
     if (invalidConnections > 0) {
         console.log("Security Warning: " + invalidConnections + " invalid connection(s) found.");
+        report += "Security Warning: " + invalidConnections + " invalid connection(s) found.\n";
     }
 
     console.log("\n========== Network Topology ==========");
@@ -123,18 +129,24 @@ function generateTopology() {
     for (const deviceName in topology) {
         if (topology[deviceName].length === 0) {
             console.log(deviceName + " -> No outgoing connections");
+            report += deviceName + " -> No outgoing connections\n";
             disconnectedDevices++;
         } else {
             console.log(deviceName + " -> " + topology[deviceName].join(", "));
+            report += deviceName + " -> " + topology[deviceName].join(", ") + "\n";
         }
     }
 
     if (disconnectedDevices > 0) {
         console.log("Security Warning: " + disconnectedDevices + " device(s) have no connections.");
+        report += "Security Warning: " + disconnectedDevices + " device(s) have no connections.";
     }
 
     console.log("======================================");
     console.log("Topology generated successfully.");
+
+    fs.writeFileSync("data/topology-report.txt", report);
+    console.log("Topology report saved successfully.");
 }
 
 function processChoice(choice) {
