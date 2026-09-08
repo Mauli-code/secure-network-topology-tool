@@ -2,9 +2,12 @@ const readline = require("readline");
 const fs = require("fs");
 
 function loadDevices() {
-    const data = fs.readFileSync("data/devices.json", "utf8");
-    const devices = JSON.parse(data);
-    return devices;
+    try {
+        const data = fs.readFileSync("data/devices.json", "utf8");
+        return JSON.parse(data);
+    } catch (error) {
+        return [];
+    }
 }
 
 function loadConnections() {
@@ -25,10 +28,11 @@ function showMenu() {
     console.log("1. About");
     console.log("2. List Devices");
     console.log("3. Add Device");
-    console.log("4. Add Connection");
-    console.log("5. List Connections");
-    console.log("6. Generate Topology");
-    console.log("7. Exit");
+    console.log("4. Remove Device");
+    console.log("5. Add Connection");
+    console.log("6. List Connections");
+    console.log("7. Generate Topology");
+    console.log("8. Exit");
 
     rl.question("Enter your choice: ", function(choice) {
         processChoice(choice);
@@ -219,7 +223,15 @@ function processChoice(choice) {
                             duplicateFound = true;
                         }
                     });
-                    const id = devices.length + 1;
+
+                    // Option A: Find highest existing ID + 1
+                    let id = 1;
+                    devices.forEach(function(device) {
+                        if (device.id >= id) {
+                            id = device.id + 1;
+                        }
+                    });
+
                     const device = {
                         id: id,
                         name: name,
@@ -238,6 +250,36 @@ function processChoice(choice) {
         });
 
     } else if (choice === "4") {
+        rl.question("Enter device name to remove: ", function(name) {
+            const deviceToRemove = findDeviceByName(name);
+
+            if (!deviceToRemove) {
+                console.log("Error: Device does not exist.");
+                showMenu();
+                return;
+            }
+
+            // Remove device from devices array
+            let devices = loadDevices();
+            devices = devices.filter(function(device) {
+                return device.name.toLowerCase() !== name.toLowerCase();
+            });
+            fs.writeFileSync("data/devices.json", JSON.stringify(devices, null, 2));
+
+            // Remove related connections
+            let connections = loadConnections();
+            connections = connections.filter(function(connection) {
+                const srcMatch = connection.source.toLowerCase() === name.toLowerCase();
+                const dstMatch = connection.destination.toLowerCase() === name.toLowerCase();
+                return !srcMatch && !dstMatch;
+            });
+            fs.writeFileSync("data/connections.json", JSON.stringify(connections, null, 2));
+
+            console.log("Device and related connections removed successfully.");
+            showMenu();
+        });
+
+    } else if (choice === "5") {
         rl.question("Enter source device: ", function(source) {
             rl.question("Enter destination device: ", function(destination) {
                 const sourceDevice = findDeviceByName(source);
@@ -291,7 +333,7 @@ function processChoice(choice) {
             });
         });
 
-    } else if (choice === "5") {
+    } else if (choice === "6") {
         const connections = loadConnections();
         if (connections.length === 0) {
             console.log("No connections found.");
@@ -304,11 +346,11 @@ function processChoice(choice) {
         }
         showMenu();
 
-    } else if (choice === "6") {
+    } else if (choice === "7") {
         generateTopology();
         showMenu();
 
-    } else if (choice === "7") {
+    } else if (choice === "8") {
         console.log("Exiting...");
         rl.close();
 
