@@ -43,7 +43,7 @@ function showMenu() {
 }
 
 function isValidIP(ip) {
-    const parts = ip.split(".");
+    const parts = ip.trim().split(".");
     if (parts.length !== 4) {
         return false;
     }
@@ -77,7 +77,7 @@ function isValidType(type) {
 function findDeviceByName(name) {
     const devices = loadDevices();
     for (const device of devices) {
-        if (device.name.toLowerCase() === name.toLowerCase()) {
+        if (device.name.toLowerCase() === name.trim().toLowerCase()) {
             return device;
         }
     }
@@ -246,7 +246,8 @@ function processChoice(choice) {
         const devices = loadDevices();
 
         rl.question("Enter device name: ", function(name) {
-            if (!isValidName(name)) {
+            const trimmedName = name.trim();
+            if (!isValidName(trimmedName)) {
                 console.log("Invalid device name.");
                 showMenu();
                 return;
@@ -254,7 +255,7 @@ function processChoice(choice) {
 
             let duplicateName = false;
             devices.forEach(function(device) {
-                if (device.name.toLowerCase() === name.toLowerCase()) {
+                if (device.name.toLowerCase() === trimmedName.toLowerCase()) {
                     duplicateName = true;
                 }
             });
@@ -271,16 +272,18 @@ function processChoice(choice) {
                     return;
                 }
 
-                if (type.trim().toLowerCase() === "router") {
-                    type = "Router";
-                } else if (type.trim().toLowerCase() === "switch") {
-                    type = "Switch";
-                } else if (type.trim().toLowerCase() === "pc") {
-                    type = "PC";
+                let formattedType = type.trim();
+                if (formattedType.toLowerCase() === "router") {
+                    formattedType = "Router";
+                } else if (formattedType.toLowerCase() === "switch") {
+                    formattedType = "Switch";
+                } else if (formattedType.toLowerCase() === "pc") {
+                    formattedType = "PC";
                 }
 
                 rl.question("Enter IP address: ", function(ip) {
-                    if (!isValidIP(ip)) {
+                    const trimmedIP = ip.trim();
+                    if (!isValidIP(trimmedIP)) {
                         console.log("Invalid IP address.");
                         showMenu();
                         return;
@@ -288,9 +291,9 @@ function processChoice(choice) {
                     let duplicateFound = false;
 
                     devices.forEach(function(device) {
-                        if (device.ip === ip) {
+                        if (device.ip === trimmedIP) {
                             console.log("Security Warning: Duplicate IP address detected.");
-                            console.log(ip + " is already assigned to " + device.name + ".");
+                            console.log(trimmedIP + " is already assigned to " + device.name + ".");
                             console.log("Please review the network configuration.");
                             duplicateFound = true;
                         }
@@ -305,9 +308,9 @@ function processChoice(choice) {
 
                     const device = {
                         id: id,
-                        name: name,
-                        type: type,
-                        ip: ip
+                        name: trimmedName,
+                        type: formattedType,
+                        ip: trimmedIP
                     };
                     devices.push(device);
 
@@ -332,14 +335,14 @@ function processChoice(choice) {
 
             let devices = loadDevices();
             devices = devices.filter(function(device) {
-                return device.name.toLowerCase() !== name.toLowerCase();
+                return device.name.toLowerCase() !== name.trim().toLowerCase();
             });
             fs.writeFileSync("data/devices.json", JSON.stringify(devices, null, 2));
 
             let connections = loadConnections();
             connections = connections.filter(function(connection) {
-                const srcMatch = connection.source.toLowerCase() === name.toLowerCase();
-                const dstMatch = connection.destination.toLowerCase() === name.toLowerCase();
+                const srcMatch = connection.source.toLowerCase() === name.trim().toLowerCase();
+                const dstMatch = connection.destination.toLowerCase() === name.trim().toLowerCase();
                 return !srcMatch && !dstMatch;
             });
             fs.writeFileSync("data/connections.json", JSON.stringify(connections, null, 2));
@@ -440,11 +443,12 @@ function processChoice(choice) {
 
     } else if (choice === "9") {
         rl.question("Enter IP address to search: ", function(ip) {
+            const searchIP = ip.trim();
             const devices = loadDevices();
             const foundDevices = [];
 
             devices.forEach(function(device) {
-                if (device.ip === ip) {
+                if (device.ip === searchIP) {
                     foundDevices.push(device);
                 }
             });
