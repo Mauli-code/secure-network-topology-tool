@@ -129,7 +129,9 @@ function generateTopology() {
         report += "Security Warning: " + invalidConnections + " invalid connection(s) found.\n";
     }
 
-    console.log("\n========== Network Topology ==========");
+    console.log("\n=================================");
+    console.log("        Network Topology        ");
+    console.log("=================================");
 
     for (const deviceName in topology) {
         const currentDevice = findDeviceByName(deviceName);
@@ -150,7 +152,7 @@ function generateTopology() {
         report += "Security Warning: " + disconnectedDevices + " device(s) have no connections.";
     }
 
-    console.log("======================================");
+    console.log("=================================");
     console.log("Topology generated successfully.");
 
     fs.writeFileSync("data/topology-report.txt", report);
@@ -167,9 +169,13 @@ function processChoice(choice) {
         if (devices.length === 0) {
             console.log("No devices found.");
         } else {
+            console.log("=================================");
+            console.log("         List of Devices         ");
+            console.log("=================================");
             devices.forEach(function(device) {
-                console.log(device);
+                console.log(`ID: ${device.id} | Name: ${device.name} | Type: ${device.type} | IP: ${device.ip}`);
             });
+            console.log("=================================");
         }
         showMenu();
 
@@ -246,7 +252,7 @@ function processChoice(choice) {
                     const jsonData = JSON.stringify(devices, null, 2);
                     fs.writeFileSync("data/devices.json", jsonData);
 
-                    console.log(device);
+                    console.log(`Device added successfully: ID: ${device.id} | Name: ${device.name} | Type: ${device.type} | IP: ${device.ip}`);
                     showMenu();
                 });
             });
@@ -331,7 +337,7 @@ function processChoice(choice) {
                 const jsonData = JSON.stringify(connections, null, 2);
                 fs.writeFileSync("data/connections.json", jsonData);
 
-                console.log(connection);
+                console.log(`Connection created: ${connection.source} -> ${connection.destination}`);
                 showMenu();
             });
         });
@@ -341,11 +347,13 @@ function processChoice(choice) {
         if (connections.length === 0) {
             console.log("No connections found.");
         } else {
-            console.log("========== Network Connections ==========");
+            console.log("=================================");
+            console.log("       Network Connections       ");
+            console.log("=================================");
             connections.forEach(function(connection) {
                 console.log(connection.source + " -> " + connection.destination);
             });
-            console.log("=========================================");
+            console.log("=================================");
         }
         showMenu();
 
