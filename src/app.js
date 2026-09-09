@@ -120,8 +120,8 @@ function generateTopology() {
             return;
         }
 
-        topology[sourceDevice.name].push(destinationDevice.name);
-        topology[destinationDevice.name].push(sourceDevice.name);
+        topology[sourceDevice.name].push(`${destinationDevice.name} (${destinationDevice.type}, IP: ${destinationDevice.ip})`);
+        topology[destinationDevice.name].push(`${sourceDevice.name} (${sourceDevice.type}, IP: ${sourceDevice.ip})`);
     });
 
     if (invalidConnections > 0) {
@@ -132,13 +132,16 @@ function generateTopology() {
     console.log("\n========== Network Topology ==========");
 
     for (const deviceName in topology) {
+        const currentDevice = findDeviceByName(deviceName);
+        const deviceLabel = `${currentDevice.name} (${currentDevice.type}, IP: ${currentDevice.ip})`;
+
         if (topology[deviceName].length === 0) {
-            console.log(deviceName + " -> No outgoing connections");
-            report += deviceName + " -> No outgoing connections\n";
+            console.log(deviceLabel + " -> No outgoing connections");
+            report += deviceLabel + " -> No outgoing connections\n";
             disconnectedDevices++;
         } else {
-            console.log(deviceName + " -> " + topology[deviceName].join(", "));
-            report += deviceName + " -> " + topology[deviceName].join(", ") + "\n";
+            console.log(deviceLabel + " -> " + topology[deviceName].join(", "));
+            report += deviceLabel + " -> " + topology[deviceName].join(", ") + "\n";
         }
     }
 
