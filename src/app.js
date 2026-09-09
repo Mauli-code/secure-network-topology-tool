@@ -32,7 +32,10 @@ function showMenu() {
     console.log("5. Add Connection");
     console.log("6. List Connections");
     console.log("7. Generate Topology");
-    console.log("8. Exit");
+    console.log("8. Search Device by Name");
+    console.log("9. Search Device by IP");
+    console.log("10. Exit");
+    console.log("11. Check Device Connectivity");
 
     rl.question("Enter your choice: ", function(choice) {
         processChoice(choice);
@@ -182,6 +185,43 @@ function generateTopology() {
     console.log("Topology report saved successfully.");
 }
 
+/* Phase 16: Check Connectivity Function */
+function checkConnectivity() {
+    const devices = loadDevices();
+    const connections = loadConnections();
+
+    let connectedDevices = 0;
+    let disconnectedDevices = 0;
+
+    devices.forEach(function(device) {
+        let isConnected = false;
+        connections.forEach(function(connection) {
+            if (
+                connection.source.toLowerCase() === device.name.toLowerCase() ||
+                connection.destination.toLowerCase() === device.name.toLowerCase()
+            ) {
+                isConnected = true;
+            }
+        });
+
+        if (isConnected) {
+            connectedDevices++;
+        } else {
+            disconnectedDevices++;
+        }
+    });
+
+    console.log("\n========== Connectivity Check ==========");
+    console.log("Total Devices: " + devices.length);
+    console.log("Connected Devices: " + connectedDevices);
+    console.log("Disconnected Devices: " + disconnectedDevices);
+    console.log("========================================");
+
+    if (disconnectedDevices > 0) {
+        console.log("Security Warning: " + disconnectedDevices + " device(s) have no connections.");
+    }
+}
+
 function processChoice(choice) {
     if (choice === "1") {
         console.log("Secure Network Topology Tool v1.0");
@@ -256,7 +296,6 @@ function processChoice(choice) {
                         }
                     });
 
-                    // Option A: Find highest existing ID + 1
                     let id = 1;
                     devices.forEach(function(device) {
                         if (device.id >= id) {
@@ -291,14 +330,12 @@ function processChoice(choice) {
                 return;
             }
 
-            // Remove device from devices array
             let devices = loadDevices();
             devices = devices.filter(function(device) {
                 return device.name.toLowerCase() !== name.toLowerCase();
             });
             fs.writeFileSync("data/devices.json", JSON.stringify(devices, null, 2));
 
-            // Remove related connections
             let connections = loadConnections();
             connections = connections.filter(function(connection) {
                 const srcMatch = connection.source.toLowerCase() === name.toLowerCase();
@@ -385,8 +422,62 @@ function processChoice(choice) {
         showMenu();
 
     } else if (choice === "8") {
+        rl.question("Enter device name to search: ", function(name) {
+            const device = findDeviceByName(name);
+
+            if (!device) {
+                console.log("Error: Device not found.");
+            } else {
+                console.log("\n========== Device Found ==========");
+                console.log("ID: " + device.id);
+                console.log("Name: " + device.name);
+                console.log("Type: " + device.type);
+                console.log("IP: " + device.ip);
+                console.log("==================================");
+            }
+            showMenu();
+        });
+
+    } else if (choice === "9") {
+        rl.question("Enter IP address to search: ", function(ip) {
+            const devices = loadDevices();
+            const foundDevices = [];
+
+            devices.forEach(function(device) {
+                if (device.ip === ip) {
+                    foundDevices.push(device);
+                }
+            });
+
+            if (foundDevices.length === 0) {
+                console.log("Device not found.");
+                showMenu();
+                return;
+            }
+
+            console.log("\n========== Devices Found ==========");
+            foundDevices.forEach(function(device) {
+                console.log("ID: " + device.id);
+                console.log("Name: " + device.name);
+                console.log("Type: " + device.type);
+                console.log("IP: " + device.ip);
+                console.log("----------------");
+            });
+
+            if (foundDevices.length > 1) {
+                console.log("Security Warning: Multiple devices are using this IP address.");
+            }
+            console.log("===================================");
+            showMenu();
+        });
+
+    } else if (choice === "10") {
         console.log("Exiting...");
         rl.close();
+
+    } else if (choice === "11") {
+        checkConnectivity();
+        showMenu();
 
     } else {
         console.log("Invalid choice. Please try again.");
