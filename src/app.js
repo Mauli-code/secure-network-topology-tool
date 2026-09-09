@@ -1,23 +1,11 @@
 const readline = require("readline");
-const fs = require("fs");
-
-function loadDevices() {
-    try {
-        const data = fs.readFileSync("data/devices.json", "utf8");
-        return JSON.parse(data);
-    } catch (error) {
-        return [];
-    }
-}
-
-function loadConnections() {
-    try {
-        const data = fs.readFileSync("data/connections.json", "utf8");
-        return JSON.parse(data);
-    } catch (error) {
-        return [];
-    }
-}
+const data = require("./data");
+const validation = require("./validation");
+const deviceModule = require("./device");
+const connectionModule = require("./connection");
+const topologyModule = require("./topology");
+const searchModule = require("./search");
+const connectivityModule = require("./connectivity");
 
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
@@ -42,193 +30,13 @@ function showMenu() {
     });
 }
 
-function isValidIP(ip) {
-    const parts = ip.trim().split(".");
-    if (parts.length !== 4) {
-        return false;
-    }
-    let valid = true;
-    parts.forEach(function(part) {
-        const number = Number(part);
-        if (part === "" || Number.isNaN(number) || number < 0 || number > 255) {
-            valid = false;
-        }
-    });
-    return valid;
-}
-
-function isValidName(name) {
-    return name.trim() !== "";
-}
-
-function isValidType(type) {
-    const allowedTypes = ["router", "switch", "pc"];
-    const enteredType = type.trim().toLowerCase();
-
-    for (const allowedType of allowedTypes) {
-        if (enteredType === allowedType) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-function findDeviceByName(name) {
-    const devices = loadDevices();
-    for (const device of devices) {
-        if (device.name.toLowerCase() === name.trim().toLowerCase()) {
-            return device;
-        }
-    }
-    return null;
-}
-
-/* Generate Network Topology */
-function generateTopology() {
-    const devices = loadDevices();
-    const connections = loadConnections();
-
-    let report = "Network Topology Report\n";
-    report += "=======================\n\n";
-
-    const topology = {};
-    let invalidConnections = 0;
-    let disconnectedDevices = 0;
-
-    devices.forEach(function(device) {
-        topology[device.name] = [];
-    });
-
-    connections.forEach(function(connection) {
-        const sourceDevice = findDeviceByName(connection.source);
-        const destinationDevice = findDeviceByName(connection.destination);
-
-        if (sourceDevice === null || destinationDevice === null) {
-            invalidConnections++;
-            console.log(
-                "Security Warning: Connection contains an unknown device."
-            );
-            return;
-        }
-
-        topology[sourceDevice.name].push(`${destinationDevice.name} (${destinationDevice.type}, IP: ${destinationDevice.ip})`);
-        topology[destinationDevice.name].push(`${sourceDevice.name} (${sourceDevice.type}, IP: ${sourceDevice.ip})`);
-    });
-
-    // Find Most Connected Device
-    let mostConnectedDevice = null;
-    let maxConnections = 0;
-
-    for (const deviceName in topology) {
-        const count = topology[deviceName].length;
-        if (count > maxConnections) {
-            maxConnections = count;
-            mostConnectedDevice = deviceName;
-        }
-    }
-
-    report += "Devices: " + devices.length + "\n";
-    report += "Connections: " + connections.length + "\n";
-
-    console.log("Topology Summary");
-    console.log("----------------");
-    console.log("Devices: " + devices.length);
-    console.log("Connections: " + connections.length);
-
-    if (mostConnectedDevice && maxConnections > 0) {
-        const topDev = findDeviceByName(mostConnectedDevice);
-        const topDevInfo = `${topDev.name} (${topDev.type}, IP: ${topDev.ip}) with ${maxConnections} connection(s)`;
-        console.log("Most Connected Device: " + topDevInfo);
-        report += "Most Connected Device: " + topDevInfo + "\n\n";
-    } else {
-        console.log("Most Connected Device: None (No connections)");
-        report += "Most Connected Device: None (No connections)\n\n";
-    }
-
-    if (connections.length === 0) {
-        console.log("Security Warning: No network connections found.");
-    }
-
-    if (invalidConnections > 0) {
-        console.log("Security Warning: " + invalidConnections + " invalid connection(s) found.");
-        report += "Security Warning: " + invalidConnections + " invalid connection(s) found.\n";
-    }
-
-    console.log("\n=================================");
-    console.log("        Network Topology        ");
-    console.log("=================================");
-
-    for (const deviceName in topology) {
-        const currentDevice = findDeviceByName(deviceName);
-        const deviceLabel = `${currentDevice.name} (${currentDevice.type}, IP: ${currentDevice.ip})`;
-
-        if (topology[deviceName].length === 0) {
-            console.log(deviceLabel + " -> No outgoing connections");
-            report += deviceLabel + " -> No outgoing connections\n";
-            disconnectedDevices++;
-        } else {
-            console.log(deviceLabel + " -> " + topology[deviceName].join(", "));
-            report += deviceLabel + " -> " + topology[deviceName].join(", ") + "\n";
-        }
-    }
-
-    if (disconnectedDevices > 0) {
-        console.log("Security Warning: " + disconnectedDevices + " device(s) have no connections.");
-        report += "Security Warning: " + disconnectedDevices + " device(s) have no connections.";
-    }
-
-    console.log("=================================");
-    console.log("Topology generated successfully.");
-
-    fs.writeFileSync("data/topology-report.txt", report);
-    console.log("Topology report saved successfully.");
-}
-
-/* Phase 16: Check Connectivity Function */
-function checkConnectivity() {
-    const devices = loadDevices();
-    const connections = loadConnections();
-
-    let connectedDevices = 0;
-    let disconnectedDevices = 0;
-
-    devices.forEach(function(device) {
-        let isConnected = false;
-        connections.forEach(function(connection) {
-            if (
-                connection.source.toLowerCase() === device.name.toLowerCase() ||
-                connection.destination.toLowerCase() === device.name.toLowerCase()
-            ) {
-                isConnected = true;
-            }
-        });
-
-        if (isConnected) {
-            connectedDevices++;
-        } else {
-            disconnectedDevices++;
-        }
-    });
-
-    console.log("\n========== Connectivity Check ==========");
-    console.log("Total Devices: " + devices.length);
-    console.log("Connected Devices: " + connectedDevices);
-    console.log("Disconnected Devices: " + disconnectedDevices);
-    console.log("========================================");
-
-    if (disconnectedDevices > 0) {
-        console.log("Security Warning: " + disconnectedDevices + " device(s) have no connections.");
-    }
-}
-
 function processChoice(choice) {
     if (choice === "1") {
         console.log("Secure Network Topology Tool v1.0");
         showMenu();
 
     } else if (choice === "2") {
-        const devices = loadDevices();
+        const devices = data.loadDevices();
         if (devices.length === 0) {
             console.log("No devices found.");
         } else {
@@ -243,11 +51,11 @@ function processChoice(choice) {
         showMenu();
 
     } else if (choice === "3") {
-        const devices = loadDevices();
+        const devices = data.loadDevices();
 
         rl.question("Enter device name: ", function(name) {
             const trimmedName = name.trim();
-            if (!isValidName(trimmedName)) {
+            if (!validation.isValidName(trimmedName)) {
                 console.log("Invalid device name.");
                 showMenu();
                 return;
@@ -265,25 +73,18 @@ function processChoice(choice) {
             }
 
             rl.question("Enter device type: ", function(type) {
-                if (!isValidType(type)) {
+                if (!validation.isValidType(type)) {
                     console.log("Invalid device type.");
                     console.log("Allowed types: Router, Switch, PC");
                     showMenu();
                     return;
                 }
 
-                let formattedType = type.trim();
-                if (formattedType.toLowerCase() === "router") {
-                    formattedType = "Router";
-                } else if (formattedType.toLowerCase() === "switch") {
-                    formattedType = "Switch";
-                } else if (formattedType.toLowerCase() === "pc") {
-                    formattedType = "PC";
-                }
+                const formattedType = validation.formatDeviceType(type);
 
                 rl.question("Enter IP address: ", function(ip) {
                     const trimmedIP = ip.trim();
-                    if (!isValidIP(trimmedIP)) {
+                    if (!validation.isValidIP(trimmedIP)) {
                         console.log("Invalid IP address.");
                         showMenu();
                         return;
@@ -299,23 +100,13 @@ function processChoice(choice) {
                         }
                     });
 
-                    let id = 1;
-                    devices.forEach(function(device) {
-                        if (device.id >= id) {
-                            id = device.id + 1;
-                        }
-                    });
-
                     const device = {
-                        id: id,
+                        id: deviceModule.getNextDeviceId(devices),
                         name: trimmedName,
                         type: formattedType,
                         ip: trimmedIP
                     };
-                    devices.push(device);
-
-                    const jsonData = JSON.stringify(devices, null, 2);
-                    fs.writeFileSync("data/devices.json", jsonData);
+                    deviceModule.addDevice(device);
 
                     console.log(`Device added successfully: ID: ${device.id} | Name: ${device.name} | Type: ${device.type} | IP: ${device.ip}`);
                     showMenu();
@@ -325,7 +116,7 @@ function processChoice(choice) {
 
     } else if (choice === "4") {
         rl.question("Enter device name to remove: ", function(name) {
-            const deviceToRemove = findDeviceByName(name);
+            const deviceToRemove = deviceModule.findDeviceByName(name);
 
             if (!deviceToRemove) {
                 console.log("Error: Device does not exist.");
@@ -333,19 +124,9 @@ function processChoice(choice) {
                 return;
             }
 
-            let devices = loadDevices();
-            devices = devices.filter(function(device) {
-                return device.name.toLowerCase() !== name.trim().toLowerCase();
-            });
-            fs.writeFileSync("data/devices.json", JSON.stringify(devices, null, 2));
+            deviceModule.removeDevice(name);
 
-            let connections = loadConnections();
-            connections = connections.filter(function(connection) {
-                const srcMatch = connection.source.toLowerCase() === name.trim().toLowerCase();
-                const dstMatch = connection.destination.toLowerCase() === name.trim().toLowerCase();
-                return !srcMatch && !dstMatch;
-            });
-            fs.writeFileSync("data/connections.json", JSON.stringify(connections, null, 2));
+            connectionModule.removeConnectionsForDevice(name);
 
             console.log("Device and related connections removed successfully.");
             showMenu();
@@ -354,8 +135,8 @@ function processChoice(choice) {
     } else if (choice === "5") {
         rl.question("Enter source device: ", function(source) {
             rl.question("Enter destination device: ", function(destination) {
-                const sourceDevice = findDeviceByName(source);
-                const destinationDevice = findDeviceByName(destination);
+                const sourceDevice = deviceModule.findDeviceByName(source);
+                const destinationDevice = deviceModule.findDeviceByName(destination);
 
                 if (!sourceDevice || !destinationDevice) {
                     console.log("Error: Source or destination device does not exist.");
@@ -369,44 +150,20 @@ function processChoice(choice) {
                     return;
                 }
 
-                const connections = loadConnections();
-
-                let duplicateConnection = false;
-                connections.forEach(function(existingConnection) {
-                    const existingSrc = existingConnection.source.toLowerCase();
-                    const existingDst = existingConnection.destination.toLowerCase();
-                    const currentSrc = sourceDevice.name.toLowerCase();
-                    const currentDst = destinationDevice.name.toLowerCase();
-
-                    if (
-                        (existingSrc === currentSrc && existingDst === currentDst) ||
-                        (existingSrc === currentDst && existingDst === currentSrc)
-                    ) {
-                        duplicateConnection = true;
-                    }
-                });
-
-                if (duplicateConnection) {
+                if (connectionModule.connectionExists(sourceDevice.name, destinationDevice.name)) {
                     console.log("Warning: This connection already exists.");
                     showMenu();
                     return;
                 }
-                const connection = {
-                    source: sourceDevice.name,
-                    destination: destinationDevice.name
-                };
-                connections.push(connection);
+                connectionModule.addConnection(sourceDevice.name, destinationDevice.name);
 
-                const jsonData = JSON.stringify(connections, null, 2);
-                fs.writeFileSync("data/connections.json", jsonData);
-
-                console.log(`Connection created: ${connection.source} -> ${connection.destination}`);
+                console.log(`Connection created: ${sourceDevice.name} -> ${destinationDevice.name}`);
                 showMenu();
             });
         });
 
     } else if (choice === "6") {
-        const connections = loadConnections();
+        const connections = connectionModule.getConnections();
         if (connections.length === 0) {
             console.log("No connections found.");
         } else {
@@ -421,21 +178,18 @@ function processChoice(choice) {
         showMenu();
 
     } else if (choice === "7") {
-        generateTopology();
+        topologyModule.generateTopology();
         showMenu();
 
     } else if (choice === "8") {
         rl.question("Enter device name to search: ", function(name) {
-            const device = findDeviceByName(name);
+            const device = searchModule.searchByName(name);
 
             if (!device) {
                 console.log("Error: Device not found.");
             } else {
                 console.log("\n========== Device Found ==========");
-                console.log("ID: " + device.id);
-                console.log("Name: " + device.name);
-                console.log("Type: " + device.type);
-                console.log("IP: " + device.ip);
+                searchModule.displayDevice(device);
                 console.log("==================================");
             }
             showMenu();
@@ -443,15 +197,7 @@ function processChoice(choice) {
 
     } else if (choice === "9") {
         rl.question("Enter IP address to search: ", function(ip) {
-            const searchIP = ip.trim();
-            const devices = loadDevices();
-            const foundDevices = [];
-
-            devices.forEach(function(device) {
-                if (device.ip === searchIP) {
-                    foundDevices.push(device);
-                }
-            });
+            const foundDevices = searchModule.searchByIP(ip);
 
             if (foundDevices.length === 0) {
                 console.log("Device not found.");
@@ -461,10 +207,7 @@ function processChoice(choice) {
 
             console.log("\n========== Devices Found ==========");
             foundDevices.forEach(function(device) {
-                console.log("ID: " + device.id);
-                console.log("Name: " + device.name);
-                console.log("Type: " + device.type);
-                console.log("IP: " + device.ip);
+                searchModule.displayDevice(device);
                 console.log("----------------");
             });
 
@@ -480,7 +223,7 @@ function processChoice(choice) {
         rl.close();
 
     } else if (choice === "11") {
-        checkConnectivity();
+        connectivityModule.checkConnectivity();
         showMenu();
 
     } else {
