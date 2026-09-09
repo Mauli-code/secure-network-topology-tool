@@ -88,17 +88,6 @@ function generateTopology() {
 
     let report = "Network Topology Report\n";
     report += "=======================\n\n";
-    report += "Devices: " + devices.length + "\n";
-    report += "Connections: " + connections.length + "\n\n";
-
-    console.log("\nTopology Summary");
-    console.log("----------------");
-    console.log("Devices: " + devices.length);
-    console.log("Connections: " + connections.length);
-
-    if (connections.length === 0) {
-        console.log("Security Warning: No network connections found.");
-    }
 
     const topology = {};
     let invalidConnections = 0;
@@ -123,6 +112,40 @@ function generateTopology() {
         topology[sourceDevice.name].push(`${destinationDevice.name} (${destinationDevice.type}, IP: ${destinationDevice.ip})`);
         topology[destinationDevice.name].push(`${sourceDevice.name} (${sourceDevice.type}, IP: ${sourceDevice.ip})`);
     });
+
+    // Find Most Connected Device
+    let mostConnectedDevice = null;
+    let maxConnections = 0;
+
+    for (const deviceName in topology) {
+        const count = topology[deviceName].length;
+        if (count > maxConnections) {
+            maxConnections = count;
+            mostConnectedDevice = deviceName;
+        }
+    }
+
+    report += "Devices: " + devices.length + "\n";
+    report += "Connections: " + connections.length + "\n";
+
+    console.log("Topology Summary");
+    console.log("----------------");
+    console.log("Devices: " + devices.length);
+    console.log("Connections: " + connections.length);
+
+    if (mostConnectedDevice && maxConnections > 0) {
+        const topDev = findDeviceByName(mostConnectedDevice);
+        const topDevInfo = `${topDev.name} (${topDev.type}, IP: ${topDev.ip}) with ${maxConnections} connection(s)`;
+        console.log("Most Connected Device: " + topDevInfo);
+        report += "Most Connected Device: " + topDevInfo + "\n\n";
+    } else {
+        console.log("Most Connected Device: None (No connections)");
+        report += "Most Connected Device: None (No connections)\n\n";
+    }
+
+    if (connections.length === 0) {
+        console.log("Security Warning: No network connections found.");
+    }
 
     if (invalidConnections > 0) {
         console.log("Security Warning: " + invalidConnections + " invalid connection(s) found.");
