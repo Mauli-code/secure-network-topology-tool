@@ -1,0 +1,9 @@
+Network Topology Report
+=======================
+
+Devices: 1
+Connections: 0
+Most Connected Device: None (No connections)
+
+Router-01 (Router, IP: 192.168.1.1) -> No outgoing connections
+Security Warning: 1 device(s) have no connections.

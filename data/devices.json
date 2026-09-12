@@ -4,5 +4,11 @@
     "name": "Router-01",
     "type": "Router",
     "ip": "192.168.1.1"
+  },
+  {
+    "id": 2,
+    "name": "3",
+    "type": "Router",
+    "ip": "1.2.3.4"
   }
 ]

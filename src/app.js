@@ -7,12 +7,18 @@ const topologyModule = require("./topology");
 const searchModule = require("./search");
 const connectivityModule = require("./connectivity");
 
+const RESET = "\x1b[0m";
+const RED = "\x1b[31m";
+const GREEN = "\x1b[32m";
+const YELLOW = "\x1b[33m";
+const BLUE = "\x1b[34m";
+
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
 function showMenu() {
-    console.log("=================================");
-    console.log(" Secure Network Topology Tool");
-    console.log("=================================");
+    console.log(BLUE + "=================================" + RESET);
+    console.log(BLUE + " Secure Network Topology Tool" + RESET);
+    console.log(BLUE + "=================================" + RESET);
     console.log("1. About");
     console.log("2. List Devices");
     console.log("3. Add Device");
@@ -22,31 +28,31 @@ function showMenu() {
     console.log("7. Generate Topology");
     console.log("8. Search Device by Name");
     console.log("9. Search Device by IP");
-    console.log("10. Exit");
-    console.log("11. Check Device Connectivity");
+    console.log("10. Check Device Connectivity");
+    console.log(RED + "11. Exit");
 
-    rl.question("Enter your choice: ", function(choice) {
+    rl.question(BLUE + "Enter your choice: " + RESET, function(choice) {
         processChoice(choice);
     });
 }
 
 function processChoice(choice) {
     if (choice === "1") {
-        console.log("Secure Network Topology Tool v1.0");
+        console.log(BLUE + "Secure Network Topology Tool v1.0" + RESET);
         showMenu();
 
     } else if (choice === "2") {
         const devices = data.loadDevices();
         if (devices.length === 0) {
-            console.log("No devices found.");
+            console.log(YELLOW + "No devices found." + RESET);
         } else {
-            console.log("=================================");
-            console.log("         List of Devices         ");
-            console.log("=================================");
+            console.log(BLUE + "=================================" + RESET);
+            console.log(BLUE + "         List of Devices         " + RESET);
+            console.log(BLUE + "=================================" + RESET);
             devices.forEach(function(device) {
                 console.log(`ID: ${device.id} | Name: ${device.name} | Type: ${device.type} | IP: ${device.ip}`);
             });
-            console.log("=================================");
+            console.log(BLUE + "=================================" + RESET);
         }
         showMenu();
 
@@ -56,7 +62,7 @@ function processChoice(choice) {
         rl.question("Enter device name: ", function(name) {
             const trimmedName = name.trim();
             if (!validation.isValidName(trimmedName)) {
-                console.log("Invalid device name.");
+                console.log(RED + "Invalid device name." + RESET);
                 showMenu();
                 return;
             }
@@ -69,13 +75,15 @@ function processChoice(choice) {
             });
 
             if (duplicateName) {
-                console.log("Security Warning: Duplicate device name detected.");
+                console.log(RED + "Error: Duplicate device name detected. Device was not added." + RESET);
+                showMenu();
+                return;
             }
 
             rl.question("Enter device type: ", function(type) {
                 if (!validation.isValidType(type)) {
-                    console.log("Invalid device type.");
-                    console.log("Allowed types: Router, Switch, PC");
+                    console.log(RED + "Invalid device type." + RESET);
+                    console.log(YELLOW + "Allowed types: Router, Switch, PC" + RESET);
                     showMenu();
                     return;
                 }
@@ -85,7 +93,7 @@ function processChoice(choice) {
                 rl.question("Enter IP address: ", function(ip) {
                     const trimmedIP = ip.trim();
                     if (!validation.isValidIP(trimmedIP)) {
-                        console.log("Invalid IP address.");
+                        console.log(RED + "Invalid IP address." + RESET);
                         showMenu();
                         return;
                     }
@@ -93,12 +101,15 @@ function processChoice(choice) {
 
                     devices.forEach(function(device) {
                         if (device.ip === trimmedIP) {
-                            console.log("Security Warning: Duplicate IP address detected.");
-                            console.log(trimmedIP + " is already assigned to " + device.name + ".");
-                            console.log("Please review the network configuration.");
                             duplicateFound = true;
                         }
                     });
+
+                    if (duplicateFound) {
+                        console.log(RED + "Error: Duplicate IP address detected. Device was not added." + RESET);
+                        showMenu();
+                        return;
+                    }
 
                     const device = {
                         id: deviceModule.getNextDeviceId(devices),
@@ -108,7 +119,7 @@ function processChoice(choice) {
                     };
                     deviceModule.addDevice(device);
 
-                    console.log(`Device added successfully: ID: ${device.id} | Name: ${device.name} | Type: ${device.type} | IP: ${device.ip}`);
+                    console.log(GREEN + `Device added successfully: ID: ${device.id} | Name: ${device.name} | Type: ${device.type} | IP: ${device.ip}` + RESET);
                     showMenu();
                 });
             });
@@ -119,7 +130,7 @@ function processChoice(choice) {
             const deviceToRemove = deviceModule.findDeviceByName(name);
 
             if (!deviceToRemove) {
-                console.log("Error: Device does not exist.");
+                console.log(RED + "Error: Device does not exist." + RESET);
                 showMenu();
                 return;
             }
@@ -128,7 +139,7 @@ function processChoice(choice) {
 
             connectionModule.removeConnectionsForDevice(name);
 
-            console.log("Device and related connections removed successfully.");
+            console.log(GREEN + "Device and related connections removed successfully." + RESET);
             showMenu();
         });
 
@@ -139,25 +150,25 @@ function processChoice(choice) {
                 const destinationDevice = deviceModule.findDeviceByName(destination);
 
                 if (!sourceDevice || !destinationDevice) {
-                    console.log("Error: Source or destination device does not exist.");
+                    console.log(RED + "Error: Source or destination device does not exist." + RESET);
                     showMenu();
                     return;
                 }
 
                 if (sourceDevice.name.toLowerCase() === destinationDevice.name.toLowerCase()) {
-                    console.log("Error: Cannot connect a device to itself.");
+                    console.log(RED + "Error: Cannot connect a device to itself." + RESET);
                     showMenu();
                     return;
                 }
 
                 if (connectionModule.connectionExists(sourceDevice.name, destinationDevice.name)) {
-                    console.log("Warning: This connection already exists.");
+                    console.log(YELLOW + "Warning: This connection already exists." + RESET);
                     showMenu();
                     return;
                 }
                 connectionModule.addConnection(sourceDevice.name, destinationDevice.name);
 
-                console.log(`Connection created: ${sourceDevice.name} -> ${destinationDevice.name}`);
+                console.log(GREEN + `Connection created: ${sourceDevice.name} -> ${destinationDevice.name}` + RESET);
                 showMenu();
             });
         });
@@ -165,15 +176,15 @@ function processChoice(choice) {
     } else if (choice === "6") {
         const connections = connectionModule.getConnections();
         if (connections.length === 0) {
-            console.log("No connections found.");
+            console.log(YELLOW + "No connections found." + RESET);
         } else {
-            console.log("=================================");
-            console.log("       Network Connections       ");
-            console.log("=================================");
+            console.log(BLUE + "=================================" + RESET);
+            console.log(BLUE + "       Network Connections       " + RESET);
+            console.log(BLUE + "=================================" + RESET);
             connections.forEach(function(connection) {
                 console.log(connection.source + " -> " + connection.destination);
             });
-            console.log("=================================");
+            console.log(BLUE + "=================================" + RESET);
         }
         showMenu();
 
@@ -186,11 +197,11 @@ function processChoice(choice) {
             const device = searchModule.searchByName(name);
 
             if (!device) {
-                console.log("Error: Device not found.");
+                console.log(RED + "Error: Device not found." + RESET);
             } else {
-                console.log("\n========== Device Found ==========");
+                console.log(BLUE + "\n========== Device Found ==========" + RESET);
                 searchModule.displayDevice(device);
-                console.log("==================================");
+                console.log(BLUE + "==================================" + RESET);
             }
             showMenu();
         });
@@ -200,34 +211,34 @@ function processChoice(choice) {
             const foundDevices = searchModule.searchByIP(ip);
 
             if (foundDevices.length === 0) {
-                console.log("Device not found.");
+                console.log(RED + "Device not found." + RESET);
                 showMenu();
                 return;
             }
 
-            console.log("\n========== Devices Found ==========");
+            console.log(BLUE + "\n========== Devices Found ==========" + RESET);
             foundDevices.forEach(function(device) {
                 searchModule.displayDevice(device);
                 console.log("----------------");
             });
 
             if (foundDevices.length > 1) {
-                console.log("Security Warning: Multiple devices are using this IP address.");
+                console.log(YELLOW + "Security Warning: Multiple devices are using this IP address." + RESET);
             }
-            console.log("===================================");
+            console.log(BLUE + "===================================" + RESET);
             showMenu();
         });
 
     } else if (choice === "10") {
-        console.log("Exiting...");
-        rl.close();
-
-    } else if (choice === "11") {
         connectivityModule.checkConnectivity();
         showMenu();
 
+    } else if (choice === "11") {
+        console.log(RED + "Exiting..." + RESET);
+        rl.close();
+
     } else {
-        console.log("Invalid choice. Please try again.");
+        console.log(RED + "Invalid choice. Please try again." + RESET);
         showMenu();
     }
 }
