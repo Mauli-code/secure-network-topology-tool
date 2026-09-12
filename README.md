@@ -2,87 +2,187 @@
 
 ## Project Description
 
-The Secure Automatic Network Topology Creation Tool is a basic Node.js command-line application that allows users to manage network devices and connections and generate a network topology.
+The **Secure Automatic Network Topology Creation Tool** is a Node.js command-line application for managing network devices and connections and generating a network topology.
 
-The application stores device and connection information in JSON files. It can validate device information, detect configuration problems such as duplicate IP addresses, generate a topology, check network connectivity, and create network health and topology reports.
+The application allows users to add, remove, search, and manage network devices and connections. Device and connection information is stored in JSON files.
 
-The project is designed to demonstrate basic application development concepts using Node.js and JavaScript.
+The project also performs basic validation and security checks, generates a topology, and checks whether devices have recorded network connections.
+
+This project is developed as a Semester 3 Application Development project using basic Node.js and JavaScript concepts.
 
 ## Features
 
-* Add, list, search, and remove network devices.
-* Add and list network connections.
-* Automatically generate a network topology.
-* Validate device names, types, and IP addresses.
-* Detect duplicate IP addresses and other configuration problems.
-* Prevent self-connections and duplicate connections.
-* Check network connectivity and identify disconnected devices.
-* Show network statistics.
-* Show network health status.
-* Generate and save topology and network health reports.
+* Add network devices
+* List network devices
+* Remove network devices
+* Search devices by name
+* Search devices by IP address
+* Add network connections
+* List network connections
+* Prevent devices from connecting to themselves
+* Prevent duplicate connections
+* Validate device names, types, and IP addresses
+* Detect duplicate device names and IP addresses
+* Generate a network topology
+* Identify devices with no recorded connections
+* Check device connectivity based on recorded connections
+* Generate and save a topology report
+* Use simple terminal colours for better CLI readability
 
-## How to Run
+## Technologies Used
 
-1. Make sure Node.js is installed on your computer.
-2. Open the project folder in the terminal.
-3. Run the following command:
+* Node.js
+* JavaScript
+* `readline`
+* `fs`
+* JSON
+* Git and GitHub
 
-```bash
-npm start
+No external npm packages are required for the main application.
+
+## How the Application Works
+
+The application starts with a command-line menu.
+
+The user selects an option from the menu, such as adding a device, adding a connection, searching for a device, or generating the topology.
+
+Device information is stored in:
+
+```text
+data/devices.json
 ```
 
-4. The application will open in the terminal.
-5. Select an option from the menu and follow the instructions shown by the application.
+Connection information is stored in:
+
+```text
+data/connections.json
+```
+
+When the topology is generated, the application reads the device and connection information and creates a representation of the network.
+
+A topology report is saved as:
+
+```text
+data/topology-report.txt
+```
+
+## Main Menu
+
+The application currently provides options for:
+
+```text
+1. About
+2. List Devices
+3. Add Device
+4. Remove Device
+5. Add Connection
+6. List Connections
+7. Generate Topology
+8. Search Device by Name
+9. Search Device by IP
+10. Check Device Connectivity
+11. Exit
+```
 
 ## Project Structure
 
 ```text
 secure-network-topology-tool/
-├── src/
-│   └── app.js
+│
 ├── data/
 │   ├── devices.json
 │   ├── connections.json
-│   ├── topology-report.txt
-│   └── health-report.txt
-├── README.md
+│   └── topology-report.txt
+│
+├── src/
+│   ├── app.js
+│   ├── connection.js
+│   ├── connectivity.js
+│   ├── data.js
+│   ├── device.js
+│   ├── search.js
+│   ├── topology.js
+│   └── validation.js
+│
+├── .gitignore
 ├── package.json
-└── .gitignore
+└── README.md
 ```
 
-### Main Files
+## Main Files
 
-* `src/app.js` — Contains the main application logic and CLI menu.
-* `data/devices.json` — Stores network device information.
-* `data/connections.json` — Stores connections between devices.
-* `data/topology-report.txt` — Stores the generated network topology report.
-* `data/health-report.txt` — Stores the network health report.
-* `package.json` — Contains the project information and start script.
-* `.gitignore` — Specifies files that Git should ignore.
+### `src/app.js`
 
-## Security and Validation Checks
+Contains the main CLI application, menu, user input, and application flow.
 
-The application performs several basic checks to help identify network configuration problems:
+### `src/device.js`
 
-* Checks whether an IP address is valid.
-* Warns when multiple devices use the same IP address.
-* Validates device names and device types.
-* Warns about duplicate device names.
-* Prevents a device from being connected to itself.
-* Prevents duplicate connections.
-* Detects connections that refer to unknown devices.
-* Identifies devices that have no connections.
-* Shows a warning when the network has disconnected devices.
+Handles device-related operations such as finding, adding, and removing devices.
+
+### `src/connection.js`
+
+Handles network connections between devices, including adding connections, checking duplicate connections, and removing connections related to a device.
+
+### `src/connectivity.js`
+
+Checks whether each device has a recorded connection and identifies devices without connections.
+
+### `src/data.js`
+
+Handles reading and writing device and connection data using JSON files.
+
+### `src/search.js`
+
+Provides device search functionality by name and IP address.
+
+### `src/topology.js`
+
+Generates the network topology using the stored devices and connections and creates the topology report.
+
+### `src/validation.js`
+
+Validates device names, device types, and IP addresses.
+
+## Data Storage
+
+The project uses JSON files instead of a database.
+
+### `devices.json`
+
+Stores information about network devices.
 
 
-## Project Status
+## Basic Security and Validation
 
-The project is currently functional and can:
+The application performs basic checks to reduce configuration errors.
 
-* Manage network devices and connections.
-* Generate a network topology.
-* Perform basic security and validation checks.
-* Check network connectivity.
-* Calculate network statistics.
-* Determine network health.
-* Save topology and health reports.
+These include:
+
+* Validating IPv4 addresses
+* Validating device names
+* Validating device types
+* Checking duplicate device names
+* Checking duplicate IP addresses
+* Preventing self-connections
+* Preventing duplicate connections
+* Checking whether connected devices exist
+* Identifying devices with no recorded connections
+
+These are basic application-level security and validation checks. The current project does not perform real network discovery or live SCADA network monitoring.
+
+## Topology Generation
+
+The topology is generated from the devices and connections stored in the JSON files.
+
+For example:
+
+```text
+Router-01
+   |
+   └── Switch-01
+          |
+          ├── PC-01
+          └── PC-02
+```
+
+The application also identifies devices with no outgoing connections and reports the most connected device.
